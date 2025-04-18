@@ -63,7 +63,7 @@ sh = r[1] * 0.5
 r = r + sh
 
 # Example: 3 Gaussian beams with different waists
-w0_list = np.linspace(0.2e-3, 1e-3, 10)
+w0_list = np.linspace(0.2e-3, 1e-3, 4)
 print("Waists (m):", w0_list)
 rayligh = np.pi * np.square(w0_list) / wavelength
 print("Rayleigh lengths (m):", rayligh)
@@ -77,13 +77,15 @@ U1_batch = np.exp(-np.square(r.reshape(-1, 1) / w0_list.reshape(1, -1))).T
 
 # Propagate all
 U2_batch = (cylindrical_abcd_propagation_batch(U1_batch, r, wavelength, (A, B, C, D)) * 2 * np.pi) #.T / target_top_values).T
+U3_batch = (U2_batch.T / target_top_values).T
 
 # Plotting
-plt.figure(figsize=(8, 4))
+plt.figure(figsize=(8, 8))
 for i, w0 in enumerate(w0_list):
-    plt.plot(r * 1e3, np.abs(U1_batch[i]), label=f"before = {w0*1e3:.1f} mm")
-for i, w0 in enumerate(w0_list):
-    plt.plot(r * 1e3, np.abs(U2_batch[i]) + 1, label=f"after = {w0*1e3:.1f} mm")
+    plt.plot(r * 1e3, np.abs(U1_batch[i]) + i, color="red", label=f"before = {w0*1e3:.1f} mm")
+    plt.plot(r * 1e3, np.abs(U2_batch[i]) + i, color="black", label=f"afterM = {w0*1e3:.1f} mm")
+    plt.plot(r * 1e3, np.abs(U3_batch[i]) + i, color="blue", label=f"afterM = {w0*1e3:.1f} mm")
+
 top_values = np.abs(U2_batch[:, 0])
 print("Top values:", top_values)
 miss_by = target_top_values / top_values # / (2 * np.pi)

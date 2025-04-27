@@ -79,7 +79,7 @@ z = 1
 A, B, C, D = 1, z, 0, 1
 
 
-N_r = 512
+N_r = 256
 max_val = 0.000125
 r = np.linspace(0, max_val, N_r)
 sh = r[1] * 0.5
@@ -107,7 +107,7 @@ abcds = [[-0.8262222222222222, -0.0021001555555555593, 151.11111111111111, -0.82
 #     K_batch.append(K)
 
 # Example: 3 Gaussian beams with different waists
-w0_list = np.array([0.000060])
+w0_list = np.array([0.0000420])
 print("Waists (m):", w0_list)
 rayligh = np.pi * np.square(w0_list) / wavelength
 #print("Rayleigh lengths (m):", rayligh)
@@ -115,13 +115,12 @@ target_waists = w0_list * np.sqrt(1 + np.square((B / rayligh)))
 print("Target waists (m):", target_waists)
 target_top_values = w0_list / target_waists
 #print("Target top values:", target_top_values)
-U1_batch = (np.cos(100000 * r.reshape(-1, 1)) * np.exp(-np.square(r.reshape(-1, 1) / w0_list.reshape(1, -1)))).T
+U1_batch = (np.cos(200000 * r.reshape(-1, 1)) * np.exp(-np.square(r.reshape(-1, 1) / w0_list.reshape(1, -1)))).T
 
 plt.figure(figsize=(8, 8))
 k = 2 * np.pi / wavelength
 B = 0.002
 xx = k * r * r[-1] / B
-print("xx", xx)
 kernel = j0(xx)
 plt.plot(r, kernel, label="kernel")
 

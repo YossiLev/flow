@@ -1,33 +1,52 @@
-# Compute and plot the Poynting magnitude divided by energy density along x-axis for the rotating charged ring.
-# Using same parameters as before: R=1 m, Q=1e-6 C, omega=1000 rad/s.
-# S_mag = |E x H| = |E_x * H_z| (here E along x, H along z)
-# u = 0.5 * eps0 * E^2 + 0.5 * mu0 * H^2
-# We plot ratio = S_mag / u (units: m/s)
+# Plot S/u along the x-axis for a rotating charged ring with:
+# R = reduced Compton wavelength of electron = ħ / (m_e c)
+# ω chosen so that ω R = c  =>  ω = c / R
+# Q = -e (electron charge)
+#
+# We'll show:
+# 1) E_x(x) and H_z(x)
+# 2) Ratio |E×H| / (0.5*eps0*E^2 + 0.5*mu0*H^2)
+#
+# Range: x from 0 to 10 R (avoid the singular point exactly at x=R)
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Physical constants
+# Physical constants (CODATA-like values)
 eps0 = 8.8541878128e-12
 mu0 = 4*np.pi*1e-7
+c = 299792458.0
+hbar = 1.054571817e-34
+m_e = 9.1093837015e-31
+e = 1.602176634e-19
 
-# Parameters
-R = 1.0
-Q = 1e-6
-omega = 1000.0
+# Parameters per user request
+R = hbar / (m_e * c)           # ~3.8615926764e-13 m
+omega = c / R                   # so that omega*R = c
+Q = -e                          # electron charge (sign affects E/H signs, not |S|)
+
+# Derived
 I = Q * omega / (2*np.pi)
 
-# Integration around ring
-Nphi = 2000
+# Integration discretization
+Nphi = 4000
 phi = np.linspace(0, 2*np.pi, Nphi, endpoint=False)
 dphi = 2*np.pi / Nphi
+
+# Source ring geometry
 x_src = R * np.cos(phi)
 y_src = R * np.sin(phi)
+
+# dl vector components
 dlx = -R * np.sin(phi) * dphi
 dly =  R * np.cos(phi) * dphi
 dq = Q / (2*np.pi) * dphi
 
-# Evaluation points
-x_vals = np.linspace(0.0, 10.0*R, 400)
+# Evaluation points along x (avoid exactly x=R to prevent divergence)
+x_vals = np.linspace(0.0, 10.0*R, 600)
+# Nudge any point too close to R
+x_vals = np.where(np.isclose(x_vals, R, rtol=0, atol=1e-9*R), x_vals + 1e-9*R, x_vals)
+
 E_x = np.zeros_like(x_vals)
 B_z = np.zeros_like(x_vals)
 
@@ -37,7 +56,9 @@ for i, x in enumerate(x_vals):
     r2 = rx*rx + ry*ry
     r = np.sqrt(r2)
     r3 = r2 * r
+    # Electric field (Coulomb integral of static ring)
     Ex = (1/(4*np.pi*eps0)) * np.sum(dq * rx / r3)
+    # Magnetic field from Biot–Savart (steady current I)
     cz = dlx*ry - dly*rx
     Bz = (mu0*I/(4*np.pi)) * np.sum(cz / r3)
     E_x[i] = Ex
@@ -45,37 +66,69 @@ for i, x in enumerate(x_vals):
 
 H_z = B_z / mu0
 
-# Compute Poynting magnitude and energy density and their ratio
-S_mag = np.abs(E_x * H_z)  # |E x H| (magnitude)
-u = 0.5 * eps0 * E_x**2 + 0.5 * mu0 * H_z**2  # energy density (J/m^3)
+# Compute S/u ratio
+S_mag = np.abs(E_x * H_z)
+u = 0.5 * eps0 * E_x**2 + 0.5 * mu0 * H_z**2
 ratio = np.full_like(x_vals, np.nan)
 mask = u > 0
 ratio[mask] = S_mag[mask] / u[mask]
 
-# Plot ratio (linear) and log10 where defined
+# Report the actual parameter numbers for transparency
+R_val = R
+omega_val = omega
+Q_val = Q
+I_val = I
+
+print("Parameters used:")
+print(f"R = ħ/(m_e c) = {R_val:.6e} m")
+print(f"ω = c/R = {omega_val:.6e} rad/s  (so ωR = c = {c:.6e} m/s)")
+print(f"Q = -e = {Q_val:.6e} C")
+print(f"Effective current I = Q ω / (2π) = {I_val:.6e} A")
+
+# Plot E_x
+plt.figure(figsize=(8,4.5))
+plt.plot(x_vals/R, E_x)
+plt.xlabel('x / R')
+plt.ylabel('E_x (V/m)')
+plt.title('E_x on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot H_z
+plt.figure(figsize=(8,4.5))
+plt.plot(x_vals/R, H_z)
+plt.xlabel('x / R')
+plt.ylabel('H_z (A/m)')
+plt.title('H_z on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot ratio S/u (linear)
 plt.figure(figsize=(8,4.5))
 plt.plot(x_vals/R, ratio)
 plt.xlabel('x / R')
 plt.ylabel('S / u (m/s)')
-plt.title('Poynting magnitude divided by energy density: |E×H| / u along x-axis')
+plt.title('Poynting magnitude / energy density along x-axis')
 plt.grid(True)
-plt.ylim(0, np.nanpercentile(ratio, 98))  # zoom to avoid huge spikes
+# clip y-axis to 98th percentile to keep curve visible
+finite_vals = ratio[np.isfinite(ratio)]
+if finite_vals.size > 0:
+    ymax = np.nanpercentile(finite_vals, 98)
+    plt.ylim(0, ymax if ymax>0 else None)
 plt.tight_layout()
 plt.show()
 
+# Plot log10 of ratio
 plt.figure(figsize=(8,4.5))
 logratio = np.full_like(ratio, np.nan)
-defined = ~np.isnan(ratio) & (ratio>0)
-logratio[defined] = np.log10(ratio[defined])
+good = np.isfinite(ratio) & (ratio>0)
+logratio[good] = np.log10(ratio[good])
 plt.plot(x_vals/R, logratio)
 plt.xlabel('x / R')
 plt.ylabel('log10(S / u)')
-plt.title('log10 of |E×H| / u along x-axis')
+plt.title('log10 of Poynting magnitude / energy density')
 plt.grid(True)
 plt.tight_layout()
 plt.show()
-
-# Print a few sample numeric values near center, at R, and far away
-sample_indices = [0, np.argmin(np.abs(x_vals-R)), np.argmin(np.abs(x_vals-5*R)), -1]
-samples = [(x_vals[i], E_x[i], H_z[i], ratio[i]) for i in sample_indices]
-samples

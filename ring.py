@@ -85,50 +85,44 @@ print(f"ω = c/R = {omega_val:.6e} rad/s  (so ωR = c = {c:.6e} m/s)")
 print(f"Q = -e = {Q_val:.6e} C")
 print(f"Effective current I = Q ω / (2π) = {I_val:.6e} A")
 
+fig, axes = plt.subplots(2, 2, figsize=(10, 10))  # 2x2 grid of subplots
+
 # Plot E_x
-plt.figure(figsize=(8,4.5))
-plt.plot(x_vals/R, E_x)
-plt.xlabel('x / R')
-plt.ylabel('E_x (V/m)')
-plt.title('E_x on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+axes[0, 0].plot(x_vals/R, E_x)
+axes[0, 0].set_xlabel('x / R')
+axes[0, 0].set_ylabel('E_x (V/m)')
+axes[0, 0].set_title('E_x on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
 
 # Plot H_z
-plt.figure(figsize=(8,4.5))
-plt.plot(x_vals/R, H_z)
-plt.xlabel('x / R')
-plt.ylabel('H_z (A/m)')
-plt.title('H_z on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+axes[0, 1].plot(x_vals/R, H_z)
+axes[0, 1].set_xlabel('x / R')
+axes[0, 1].set_ylabel('H_z (A/m)')
+axes[0, 1].set_title('H_z on x-axis (electron ring, R = ħ/m_ec, ωR = c)')
 
 # Plot ratio S/u (linear)
-plt.figure(figsize=(8,4.5))
-plt.plot(x_vals/R, ratio)
-plt.xlabel('x / R')
-plt.ylabel('S / u (m/s)')
-plt.title('Poynting magnitude / energy density along x-axis')
-plt.grid(True)
+axes[1, 0].plot(x_vals/R, ratio)
+axes[1, 0].set_xlabel('x / R')
+axes[1, 0].set_ylabel('S / u (m/s)')
+axes[1, 0].set_title('Poynting magnitude / energy density along x-axis')
+
 # clip y-axis to 98th percentile to keep curve visible
-finite_vals = ratio[np.isfinite(ratio)]
-if finite_vals.size > 0:
-    ymax = np.nanpercentile(finite_vals, 98)
-    plt.ylim(0, ymax if ymax>0 else None)
-plt.tight_layout()
-plt.show()
+# finite_vals = ratio[np.isfinite(ratio)]
+# if finite_vals.size > 0:
+#     ymax = np.nanpercentile(finite_vals, 98)
+#     plt.ylim(0, ymax if ymax>0 else None)
+# plt.tight_layout()
+# plt.show()
 
 # Plot log10 of ratio
-plt.figure(figsize=(8,4.5))
 logratio = np.full_like(ratio, np.nan)
 good = np.isfinite(ratio) & (ratio>0)
 logratio[good] = np.log10(ratio[good])
-plt.plot(x_vals/R, logratio)
-plt.xlabel('x / R')
-plt.ylabel('log10(S / u)')
-plt.title('log10 of Poynting magnitude / energy density')
-plt.grid(True)
+axes[1, 1].plot(x_vals/R, logratio)
+axes[1, 1].set_xlabel('x / R')
+axes[1, 1].set_ylabel('log10(S / u)')
+axes[1, 1].set_title('log10 of Poynting magnitude / energy density')
+for ax in axes.flat:
+    ax.grid(True)
+
 plt.tight_layout()
 plt.show()
